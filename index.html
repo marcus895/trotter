@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trotter — AI Travel Planning</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --midnight: #0D1B2A;
+      --amber: #F4A228;
+      --amber-dark: #D4891A;
+      --amber-glow: rgba(244, 162, 40, 0.1);
+      --cream: #F5F0E8;
+      --cream-dark: #EDE8DF;
+      --white: #FFFFFF;
+      --text-muted: #4A5568;
+      --border: rgba(13, 27, 42, 0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--cream);
+      color: var(--midnight);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6 { color: var(--midnight); }
+    p { color: var(--text-muted); }
+    a { color: inherit; }
+
+    /* ─── NAV ─────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 5%;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 12px rgba(13,27,42,0.06);
+      transition: box-shadow 0.3s;
+    }
+
+    .nav-logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--midnight);
+    }
+
+    .nav-logo span { color: var(--amber); }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--midnight); }
+
+    .nav-cta {
+      background: var(--amber);
+      color: var(--midnight);
+      padding: 0.55rem 1.4rem;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .nav-cta:hover { background: var(--amber-dark); transform: translateY(-1px); }
+
+    /* ─── HERO ────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 7rem 5% 5rem;
+      background: var(--cream);
+    }
+
+    .hero-content {
+      max-width: 780px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(244,162,40,0.1);
+      border: 1px solid rgba(244,162,40,0.25);
+      color: var(--text-muted);
+      padding: 0.4rem 1rem;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1.75rem;
+    }
+
+    .hero-badge::before {
+      content: '';
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--amber);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.6rem, 6vw, 5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin-bottom: 1.5rem;
+      color: var(--midnight);
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--amber);
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+
+    .hero-form {
+      display: flex;
+      gap: 0.75rem;
+      max-width: 480px;
+      margin: 0 auto 1.25rem;
+    }
+
+    .hero-form input {
+      flex: 1;
+      padding: 0.9rem 1.25rem;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      color: var(--midnight);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 4px rgba(13,27,42,0.05);
+    }
+
+    .hero-form input::placeholder { color: var(--text-muted); }
+    .hero-form input:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(244,162,40,0.12);
+    }
+
+    .btn-primary {
+      background: var(--amber);
+      color: var(--midnight);
+      padding: 0.9rem 1.75rem;
+      border: none;
+      border-radius: 50px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(244,162,40,0.3);
+    }
+
+    .btn-primary:hover {
+      background: var(--amber-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(244,162,40,0.38);
+    }
+
+    .hero-note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .hero-launch {
+      margin-top: 2.5rem;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .live-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--amber);
+      flex-shrink: 0;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ─── SECTION COMMON ──────────────────────────────────── */
+    section {
+      padding: 6rem 5%;
+    }
+
+    .section-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.9rem, 3.5vw, 3rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      color: var(--midnight);
+      margin-bottom: 1rem;
+    }
+
+    .section-sub {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 560px;
+    }
+
+    /* ─── HOW IT WORKS ────────────────────────────────────── */
+    .how {
+      background: var(--white);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .how::before {
+      content: '';
+      position: absolute;
+      top: -200px; right: -200px;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(244,162,40,0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .how-header { text-align: center; margin-bottom: 4rem; }
+    .how-header .section-sub { margin: 0 auto; }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      position: relative;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 3.5rem; left: 16.5%;
+      right: 16.5%;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(244,162,40,0.4), rgba(244,162,40,0.15), rgba(244,162,40,0.4));
+      display: none;
+    }
+
+    @media (min-width: 900px) { .steps::before { display: block; } }
+
+    .step {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.25rem;
+      position: relative;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+      box-shadow: 0 2px 12px rgba(13,27,42,0.05);
+    }
+
+    .step:hover {
+      border-color: rgba(244,162,40,0.35);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(13,27,42,0.09);
+    }
+
+    .step-num {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: var(--amber);
+      color: var(--midnight);
+      font-size: 1.1rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 4px 12px rgba(244,162,40,0.3);
+    }
+
+    .step-icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .step h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--midnight);
+      margin-bottom: 0.75rem;
+    }
+
+    .step p { color: var(--text-muted); font-size: 0.95rem; }
+
+    /* ─── FEATURES ────────────────────────────────────────── */
+    .features-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: end;
+      margin-bottom: 3.5rem;
+    }
+
+    @media (max-width: 700px) {
+      .features-header { grid-template-columns: 1fr; }
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(13,27,42,0.05);
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(244,162,40,0.05), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+      border-radius: 20px;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(244,162,40,0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(13,27,42,0.1);
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-card.featured {
+      background: var(--white);
+      border-color: rgba(244,162,40,0.18);
+      grid-column: span 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    @media (max-width: 700px) {
+      .feature-card.featured {
+        grid-column: span 1;
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .feature-icon-wrap {
+      width: 52px; height: 52px;
+      background: rgba(244,162,40,0.1);
+      border: 1px solid rgba(244,162,40,0.2);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 1.25rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--midnight);
+      margin-bottom: 0.6rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.65;
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-visual {
+      position: relative;
+      height: 200px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--cream);
+      border: 1px solid var(--border);
+    }
+
+    .feature-visual-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      padding: 1.25rem;
+    }
+
+    .vis-bar {
+      height: 10px;
+      border-radius: 6px;
+      background: rgba(13,27,42,0.07);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .vis-bar::after {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--amber), #FFD080);
+      animation: barGrow 2.5s ease-in-out infinite alternate;
+    }
+
+    .vis-bar:nth-child(1)::after { width: 75%; animation-delay: 0s; }
+    .vis-bar:nth-child(2)::after { width: 50%; animation-delay: 0.3s; }
+    .vis-bar:nth-child(3)::after { width: 88%; animation-delay: 0.6s; }
+    .vis-bar:nth-child(4)::after { width: 35%; animation-delay: 0.9s; }
+    .vis-bar:nth-child(5)::after { width: 62%; animation-delay: 1.2s; }
+
+    @keyframes barGrow {
+      from { opacity: 0.55; }
+      to { opacity: 1; }
+    }
+
+    .vis-dots {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: auto;
+    }
+
+    .vis-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--amber);
+      opacity: 0.25;
+    }
+
+    .vis-dot.active { opacity: 0.9; }
+
+    /* ─── CTA BAND ────────────────────────────────────────── */
+    .cta-band {
+      position: relative;
+      overflow: hidden;
+      background: var(--cream);
+      text-align: center;
+      padding: 5rem 5%;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cta-band::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px; height: 300px;
+      background: radial-gradient(ellipse, rgba(244,162,40,0.09) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-band .geo-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(13,27,42,0.05);
+    }
+
+    .geo-ring-1 { width: 300px; height: 300px; top: -100px; left: -80px; }
+    .geo-ring-2 { width: 200px; height: 200px; bottom: -60px; right: 10%; }
+
+    .cta-band h2 {
+      font-size: clamp(1.9rem, 3.5vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--midnight);
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .cta-band p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      margin-bottom: 2.25rem;
+      position: relative;
+    }
+
+    .cta-form {
+      display: flex;
+      gap: 0.75rem;
+      max-width: 440px;
+      margin: 0 auto 0.85rem;
+      position: relative;
+    }
+
+    .cta-form input {
+      flex: 1;
+      padding: 0.9rem 1.25rem;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      color: var(--midnight);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 4px rgba(13,27,42,0.05);
+    }
+
+    .cta-form input:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(244,162,40,0.12);
+    }
+    .cta-form input::placeholder { color: var(--text-muted); }
+
+    .cta-note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      position: relative;
+    }
+
+    /* ─── FOOTER ──────────────────────────────────────────── */
+    footer {
+      background: var(--cream-dark);
+      padding: 4rem 5% 2.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-top {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 2.5rem;
+      margin-bottom: 3rem;
+    }
+
+    @media (max-width: 768px) {
+      .footer-top { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .footer-top { grid-template-columns: 1fr; }
+    }
+
+    .footer-brand p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin: 1rem 0 1.5rem;
+      max-width: 280px;
+    }
+
+    .footer-social {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .social-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    .social-btn:hover {
+      background: rgba(244,162,40,0.1);
+      border-color: rgba(244,162,40,0.3);
+      color: var(--amber-dark);
+    }
+
+    .footer-col h4 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--midnight);
+      margin-bottom: 1.25rem;
+    }
+
+    .footer-col ul { list-style: none; }
+
+    .footer-col ul li { margin-bottom: 0.7rem; }
+
+    .footer-col ul a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      transition: color 0.2s;
+    }
+
+    .footer-col ul a:hover { color: var(--midnight); }
+
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-bottom a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    .footer-bottom a:hover { color: var(--midnight); }
+
+    /* ─── TOAST ───────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--midnight);
+      color: var(--cream);
+      padding: 0.85rem 1.75rem;
+      border-radius: 50px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      z-index: 999;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      white-space: nowrap;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ─── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .hero-form, .cta-form { flex-direction: column; }
+      .hero-form input, .cta-form input { width: 100%; }
+nav .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-logo">Tro<span>tt</span>er</div>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#features">Features</a></li>
+  </ul>
+  <a href="#waitlist" class="nav-cta">Join Waitlist</a>
+</nav>
+
+<!-- ── HERO ─────────────────────────────────────────────────── -->
+<section class="hero" id="home">
+  <div class="hero-content">
+    <div class="hero-badge">AI-Powered Travel Planning</div>
+    <h1>From your front door    <br><em>to the world.</em></h1>
+    <p class="hero-tagline">
+      <strong>Your personal travel planner</strong> <br>
+      Tell Trotter where you want to go, when, and your budget.
+It asks you the right questions — then builds your perfect trip
+and delivers the complete plan straight to you and your travel companions inbox.
+    </p>
+
+    <form class="hero-form" onsubmit="handleSubmit(event, this)">
+      <input type="email" placeholder="Enter your email address" required />
+      <button type="submit" class="btn-primary">Get Early Access</button>
+    </form>
+    <p class="hero-note">Free during beta &nbsp;·&nbsp; No credit card required</p>
+
+    <p class="hero-launch">567 already signed up <span class="live-dot"></span></p>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ──────────────────────────────────────────── -->
+<section class="how" id="how">
+  <div class="how-header">
+    <span class="section-label">Simple by design</span>
+    <h2 class="section-title">Travel planning<br>in three steps</h2>
+    <p class="section-sub">No more juggling 12 browser tabs. Trotter is your concierge — it plans, recommends, and guides you to exactly where you need to go.</p>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <span class="step-icon">💬</span>
+      <h3>Tell us your dream</h3>
+      <p>Describe your ideal trip in plain language. Destination, budget, vibe, travel dates — or just say "surprise me." Trotter listens and learns.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <span class="step-icon">✨</span>
+      <h3>AI builds your itinerary</h3>
+      <p>Trotter's AI crafts a full itinerary — finding the best flights, accommodation, activities, and restaurants — curated for your preferences and budget.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <span class="step-icon">🌍</span>
+      <h3>Head straight there</h3>
+      <p>Review your curated itinerary and make it yours. When you're ready, Trotter sends you the complete travel package directly in your inbox and will help you book the entire trip — no hunting, no extra tabs.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ──────────────────────────────────────────────── -->
+<section id="features">
+  <div class="features-header">
+    <div>
+      <span class="section-label">Why Trotter</span>
+      <h2 class="section-title">Built for the way<br>you actually travel</h2>
+    </div>
+    <p class="section-sub" style="align-self:start; margin-top: 0.5rem;">From solo adventures to family expeditions, Trotter adapts to every traveler.</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card featured">
+      <div>
+        <div class="feature-icon-wrap">🏠</div>
+        <h3>Your journey starts at home</h3>
+        <p>Trotter plans everything before you even leave — from whether it's cheaper to drive, take the train, or get a taxi to the airport, to where you should park and which transport apps to download for your destination.</p>
+        <ul style="list-style:none; margin-top:1.25rem; display:flex; flex-direction:column; gap:0.6rem;">
+          <li style="display:flex; align-items:center; gap:0.6rem; font-size:0.88rem; color:var(--text-muted);">
+            <span style="color:var(--amber); font-size:0.9rem;">✓</span> Door-to-airport logistics
+          </li>
+          <li style="display:flex; align-items:center; gap:0.6rem; font-size:0.88rem; color:var(--text-muted);">
+            <span style="color:var(--amber); font-size:0.9rem;">✓</span> Parking vs. transit comparison
+          </li>
+          <li style="display:flex; align-items:center; gap:0.6rem; font-size:0.88rem; color:var(--text-muted);">
+            <span style="color:var(--amber); font-size:0.9rem;">✓</span> Local transport apps recommended
+          </li>
+        </ul>
+      </div>
+      <div class="feature-visual">
+        <div class="feature-visual-inner">
+          <div style="font-size:0.72rem; color:var(--amber); font-weight:600; letter-spacing:0.05em; margin-bottom:0.5rem;">YOUR TRAVEL PROFILE</div>
+          <div class="vis-bar"></div>
+          <div class="vis-bar"></div>
+          <div class="vis-bar"></div>
+          <div class="vis-bar"></div>
+          <div class="vis-bar"></div>
+          <div class="vis-dots">
+            <div class="vis-dot active"></div>
+            <div class="vis-dot active"></div>
+            <div class="vis-dot active"></div>
+            <div class="vis-dot"></div>
+            <div class="vis-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon-wrap">🛂</div>
+      <h3>Visa &amp; entry requirements</h3>
+      <p>Trotter checks if you need a visa or ESTA, tells you exactly what it costs, and links you directly to the official application — no searching, no guessing.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon-wrap">💉</div>
+      <h3>Health &amp; vaccinations</h3>
+      <p>Know exactly which vaccines are recommended before you travel. Trotter links you directly to book a travel health appointment — so you're covered before you go.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon-wrap">🤝</div>
+      <h3>Your personal trip concierge</h3>
+      <p>Once your plan is ready, a dedicated AI assistant is built around your specific itinerary. Ask it anything while you're away — it knows your flights, your hotels, your plans, and the local weather.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon-wrap">📶</div>
+      <h3>eSIM &amp; connectivity</h3>
+      <p>Stay connected from the moment you land. Trotter recommends the best eSIM for your destination and links you directly to activate it before you fly.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon-wrap">🎭</div>
+      <h3>Events &amp; experiences</h3>
+      <p>Trotter finds what's happening at your destination during your stay — concerts, markets, local festivals — and recommends activities matched to your personal interests and travel style.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA BAND ──────────────────────────────────────────────── -->
+<section class="cta-band" id="waitlist">
+  <div class="geo-ring geo-ring-1"></div>
+  <div class="geo-ring geo-ring-2"></div>
+
+  <span class="section-label">Early access</span>
+  <h2>Your next adventure<br>starts here.</h2>
+  <p>Join 567 travelers already on the waitlist. Be first to explore.</p>
+
+  <form class="cta-form" onsubmit="handleSubmit(event, this)">
+    <input type="email" placeholder="your@email.com" required />
+    <button type="submit" class="btn-primary">Reserve My Spot</button>
+  </form>
+  <p class="cta-note">Free forever for early members &nbsp;·&nbsp; No spam, ever</p>
+</section>
+
+<!-- ── FOOTER ────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="nav-logo" style="font-size:1.4rem;">Tro<span style="color:var(--amber);">tt</span>er</div>
+      <p>Your personal AI travel planner. Trotter finds the best flights, hotels, and experiences — then sends you directly to the right place to book. Premium guidance, zero friction.</p>
+      <div class="footer-social">
+        <a href="#" class="social-btn" aria-label="Twitter">𝕏</a>
+        <a href="#" class="social-btn" aria-label="Instagram">◻</a>
+        <a href="#" class="social-btn" aria-label="LinkedIn">in</a>
+      </div>
+    </div>
+
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#">How it works</a></li>
+        <li><a href="#">Features</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Enterprise</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Company</h4>
+      <ul>
+        <li><a href="#">About</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">Careers</a></li>
+        <li><a href="#">Press</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Service</a></li>
+        <li><a href="#">Cookie Policy</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 Trotter Technologies, Inc. All rights reserved.</span>
+    <span>Made with ♥ for curious travelers everywhere</span>
+  </div>
+</footer>
+
+<!-- ── TOAST ─────────────────────────────────────────────────── -->
+<div class="toast" id="toast">You're on the list! We'll be in touch. ✈</div>
+
+<script>
+  function handleSubmit(e, form) {
+    e.preventDefault();
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    form.reset();
+    setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+
+  // Subtle nav shadow on scroll
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    nav.style.boxShadow = window.scrollY > 50
+      ? '0 2px 20px rgba(13,27,42,0.1)'
+      : '0 1px 12px rgba(13,27,42,0.06)';
+  });
+
+  // Intersection observer for fade-in
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.step, .feature-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease, border-color 0.3s, box-shadow 0.3s';
+    observer.observe(el);
+  });
+</script>
+
+</body>
+</html>

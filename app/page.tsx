@@ -70,7 +70,7 @@ export default function Home() {
         <div className="hero-content">
           <div className="hero-badge">AI-Powered Travel Planning</div>
           <h1>
-            From your front door <br /><em>to the world.</em>
+            <span style={{ whiteSpace: "nowrap" }}>From your front door</span><br /><em>to the world.</em>
           </h1>
           <p className="hero-tagline">
             <strong>Your personal travel planner</strong>

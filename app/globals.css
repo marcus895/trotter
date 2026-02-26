@@ -74,6 +74,10 @@ nav {
   font-weight: 700;
   font-size: 0.88rem;
   text-decoration: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
   transition: background 0.2s, transform 0.15s;
 }
 
@@ -85,13 +89,30 @@ nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 7rem 5% 5rem;
+  padding: 4rem 5% 4rem;
   background: var(--cream);
 }
 
-.hero-content {
-  max-width: 780px;
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+  max-width: 1200px;
+  width: 100%;
+}
+
+.hero-left { text-align: left; }
+
+.hero-right {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 960px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 3rem; }
+  .hero-right { display: none; }
 }
 
 .hero-badge {
@@ -122,6 +143,19 @@ nav {
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+@keyframes slotSpin {
+  0%   { opacity: 0; transform: translateY(18px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slotLand {
+  0%   { opacity: 0; transform: translateY(18px); }
+  50%  { opacity: 1; transform: translateY(-7px); }
+  70%  { transform: translateY(3px); }
+  85%  { transform: translateY(-2px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .hero h1 {
@@ -216,6 +250,113 @@ nav {
   background: var(--amber);
   flex-shrink: 0;
   animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── TRIP CARD (hero right) ──────────────────────────── */
+.trip-card {
+  background: var(--white);
+  border-radius: 24px;
+  box-shadow: 0 32px 80px rgba(13,27,42,0.18), 0 8px 24px rgba(13,27,42,0.1);
+  overflow: hidden;
+  animation: float 6s ease-in-out infinite;
+  width: 340px;
+  flex-shrink: 0;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-14px); }
+}
+
+.trip-card-header {
+  background: linear-gradient(135deg, #0D1B2A 0%, #162435 100%);
+  padding: 1.5rem 1.75rem 1.6rem;
+}
+
+.trip-card-dest {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--amber);
+  text-transform: uppercase;
+  margin-bottom: 0.45rem;
+}
+
+.trip-card-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.3rem;
+  line-height: 1.2;
+}
+
+.trip-card-dates {
+  font-size: 0.8rem;
+  color: rgba(245,240,232,0.55);
+  font-weight: 500;
+}
+
+.trip-card-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.75rem;
+  background: rgba(244,162,40,0.05);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.025em;
+}
+
+.trip-card-body {
+  padding: 1.25rem 1.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-height: 210px;
+}
+
+.trip-card-line {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  animation: lineIn 0.35s ease forwards;
+}
+
+.trip-card-line-icon {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: rgba(244,162,40,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+
+.trip-card-line-text {
+  font-size: 0.83rem;
+  color: var(--midnight);
+  font-weight: 500;
+}
+
+.card-cursor {
+  display: inline-block;
+  width: 2px; height: 13px;
+  background: var(--amber);
+  margin-left: 1px;
+  vertical-align: middle;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes lineIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
 
 /* ─── SECTION COMMON ──────────────────────────────────── */
@@ -691,4 +832,73 @@ footer {
   .hero-form, .cta-form { flex-direction: column; }
   .hero-form input, .cta-form input { width: 100%; }
   nav .nav-links { display: none; }
+  nav .nav-cta { display: none; }
+}
+
+/* ─── LIVE BUILDER SECTION ───────────────────────────── */
+.builder-section {
+  background: var(--midnight);
+  padding: 6rem 5%;
+  position: relative;
+  overflow: hidden;
+}
+
+.builder-section::before {
+  content: '';
+  position: absolute;
+  top: -180px; right: -180px;
+  width: 520px; height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(244,162,40,0.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.builder-section::after {
+  content: '';
+  position: absolute;
+  bottom: -120px; left: -80px;
+  width: 360px; height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(244,162,40,0.04) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.builder-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .builder-inner { grid-template-columns: 1fr; gap: 3rem; }
+}
+
+.builder-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.builder-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.4rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.builder-progress-bar {
+  height: 2px;
+  background: rgba(255,255,255,0.06);
+}
+
+.builder-steps-list {
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
 }

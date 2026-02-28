@@ -827,6 +827,38 @@ footer {
 
 .toast.show { transform: translateX(-50%) translateY(0); }
 
+/* ─── LUXURY INLINE FORM INPUTS ──────────────────────── */
+.luxury-form-input::placeholder,
+.luxury-form-input::-webkit-input-placeholder {
+  color: rgba(13,27,42,0.22);
+}
+
+.luxury-form-input::-webkit-calendar-picker-indicator {
+  opacity: 0.35;
+  cursor: pointer;
+}
+
+/* ─── STEP FLOW INPUTS ────────────────────────────────── */
+.step-giant-input::placeholder {
+  color: rgba(13,27,42,0.15);
+}
+
+.step-giant-input::-webkit-calendar-picker-indicator {
+  opacity: 0.3;
+  cursor: pointer;
+}
+
+/* ─── STEP FUNNEL TRANSITIONS ─────────────────────────── */
+@keyframes funnelIn {
+  from { opacity: 0; transform: translateY(36px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes funnelOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-36px); }
+}
+
 /* ─── RESPONSIVE ──────────────────────────────────────── */
 @media (max-width: 600px) {
   .hero-form, .cta-form { flex-direction: column; }

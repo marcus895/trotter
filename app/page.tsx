@@ -71,6 +71,8 @@ export default function Home() {
     email: "",
   });
   const [formExiting, setFormExiting] = useState(false);
+  const [formStep, setFormStep] = useState(1);        // 1–5
+  const [formStepExiting, setFormStepExiting] = useState(false);
 
   // ── question cards
   const [currentQuestionId, setCurrentQuestionId] = useState("Q1");
@@ -82,6 +84,8 @@ export default function Home() {
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
 
   const navRef = useRef<HTMLElement>(null);
+  const formSectionRef = useRef<HTMLElement>(null);
+  const [formParallax, setFormParallax] = useState(50);
 
   // ── handlers ───────────────────────────────────────────────────────────────
 
@@ -154,6 +158,37 @@ export default function Home() {
     }, 380);
   }
 
+  function scrollToForm() {
+    const el = formSectionRef.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top, behavior: "smooth" });
+  }
+
+  function advanceFormStep() {
+    if (formStepExiting) return;
+    setFormStepExiting(true);
+    setTimeout(() => {
+      setFormStep((s) => Math.min(s + 1, 5));
+      setFormStepExiting(false);
+    }, 380);
+  }
+
+  function launchFromStepFlow() {
+    if (!formData.email.trim()) return;
+    setCurrentQuestionId("Q1");
+    setProfileVector({ ...INITIAL_VECTOR });
+    setQuestionCardKey(0);
+    setAnswerLog([]);
+    setSessionData(null);
+    setTravelProfile(null);
+    setFormExiting(true);
+    setTimeout(() => {
+      setFormExiting(false);
+      setStep(2);
+    }, 420);
+  }
+
   function handleBackFromQuestions() {
     setCurrentQuestionId("Q1");
     setProfileVector({ ...INITIAL_VECTOR });
@@ -161,7 +196,9 @@ export default function Home() {
     setIsCardExiting(false);
     setAnswerLog([]);
     setSessionData(null);
-    setStep(1);
+    setFormStep(1);
+    setStep(0);
+    setTimeout(() => scrollToForm(), 80);
   }
 
   // ── effects ────────────────────────────────────────────────────────────────
@@ -178,6 +215,23 @@ export default function Home() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // ── parallax: form rises from below as user scrolls ──────────────────────
+  useEffect(() => {
+    if (step !== 0) return;
+    const handleScroll = () => {
+      const el = formSectionRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const windowH = window.innerHeight;
+      // progress: 0 when form top is at bottom of screen, 1 when at top
+      const progress = Math.max(0, Math.min(1, 1 - rect.top / windowH));
+      setFormParallax(50 * (1 - progress));
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [step]);
 
   useEffect(() => {
     if (step !== 0) return;
@@ -250,6 +304,30 @@ export default function Home() {
 
   const budgetOptions = ["Budget", "Mid-range", "Premium", "Luxury"];
 
+  const luxuryInputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "0.85rem 0",
+    background: "transparent",
+    border: "none",
+    borderBottom: "1.5px solid rgba(13,27,42,0.15)",
+    borderRadius: 0,
+    color: "var(--midnight)",
+    fontSize: "1.1rem",
+    outline: "none",
+    fontFamily: "inherit",
+    transition: "border-color 0.25s",
+  };
+
+  const luxuryLabelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "0.68rem",
+    fontWeight: 700,
+    letterSpacing: "0.13em",
+    textTransform: "uppercase" as const,
+    color: "var(--amber)",
+    marginBottom: "0.5rem",
+  };
+
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "0.9rem 1.25rem",
@@ -273,6 +351,58 @@ export default function Home() {
     letterSpacing: "0.02em",
   };
 
+  // ── step-form shared styles ────────────────────────────────────────────────
+
+  const stepHeadlineStyle: React.CSSProperties = {
+    fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
+    fontWeight: 800,
+    letterSpacing: "-0.035em",
+    lineHeight: 1.1,
+    color: "var(--midnight)",
+    margin: 0,
+    marginBottom: "0.25rem",
+  };
+
+  const stepLabelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "0.68rem",
+    fontWeight: 700,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase" as const,
+    color: "var(--amber)",
+    marginBottom: "0.6rem",
+  };
+
+  const stepInputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "0.75rem 0",
+    background: "transparent",
+    border: "none",
+    borderBottom: "1.5px solid rgba(13,27,42,0.12)",
+    borderRadius: 0,
+    color: "var(--midnight)",
+    fontSize: "1.45rem",
+    outline: "none",
+    fontFamily: "inherit",
+    fontWeight: 500,
+    transition: "border-color 0.25s",
+  };
+
+  const stepContinueStyle: React.CSSProperties = {
+    display: "inline-block",
+    marginTop: "3rem",
+    background: "none",
+    border: "none",
+    color: "var(--amber)",
+    fontSize: "1.05rem",
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    letterSpacing: "0.02em",
+    padding: 0,
+    transition: "opacity 0.2s, transform 0.2s",
+  };
+
   const depth = QUESTION_DEPTH[currentQuestionId] ?? 1;
 
   // ── render ─────────────────────────────────────────────────────────────────
@@ -293,7 +423,7 @@ export default function Home() {
                 <li><a href="#">Careers</a></li>
                 <li><a href="#">My Trips</a></li>
               </ul>
-              <button className="nav-cta" onClick={() => setStep(1)}>
+              <button className="nav-cta" onClick={scrollToForm}>
                 Create my dream trip
               </button>
             </>
@@ -339,7 +469,7 @@ export default function Home() {
                 </p>
                 <button
                   className="btn-primary"
-                  onClick={() => setStep(1)}
+                  onClick={scrollToForm}
                   style={{ fontSize: "1.15rem", padding: "1.1rem 2.75rem" }}
                 >
                   Create my dream trip →
@@ -372,6 +502,338 @@ export default function Home() {
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── TRIP BUILDER — one-at-a-time flow ── */}
+          <section
+            ref={formSectionRef}
+            id="plan"
+            style={{
+              background: "var(--cream)",
+              minHeight: "100vh",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {/* ── Step content with parallax ── */}
+            <div
+              style={{
+                width: "100%",
+                maxWidth: "640px",
+                padding: "8rem 5% 7rem",
+                transform: `translateY(${formParallax}px)`,
+                willChange: "transform",
+                textAlign: "center",
+                animation: formExiting
+                  ? "formSlideOut 0.42s cubic-bezier(0.4, 0, 1, 1) forwards"
+                  : undefined,
+              }}
+            >
+              {/* ── Animated step ── */}
+              <div
+                key={formStep}
+                style={{
+                  animation: formStepExiting
+                    ? "funnelOut 0.38s cubic-bezier(0.4, 0, 1, 1) forwards"
+                    : "funnelIn 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards",
+                }}
+              >
+
+                {/* STEP 1 — DESTINATION */}
+                {formStep === 1 && (
+                  <div>
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Where to?"
+                      className="step-giant-input"
+                      value={formData.destination}
+                      onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && formData.destination.trim()) advanceFormStep();
+                      }}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        fontSize: "clamp(2.8rem, 8vw, 5.5rem)",
+                        textAlign: "center",
+                        border: "none",
+                        borderBottom: "2px solid rgba(13,27,42,0.1)",
+                        background: "transparent",
+                        color: "var(--midnight)",
+                        outline: "none",
+                        fontFamily: "inherit",
+                        fontWeight: 800,
+                        letterSpacing: "-0.04em",
+                        padding: "0.2rem 0 0.8rem",
+                        transition: "border-color 0.25s",
+                      }}
+                      onFocus={(e) => (e.target.style.borderBottomColor = "rgba(244,162,40,0.55)")}
+                      onBlur={(e) => (e.target.style.borderBottomColor = "rgba(13,27,42,0.1)")}
+                    />
+                    <button
+                      onClick={advanceFormStep}
+                      disabled={!formData.destination.trim()}
+                      style={{
+                        marginTop: "2.5rem",
+                        background: "none",
+                        border: "none",
+                        color: formData.destination.trim() ? "var(--amber)" : "rgba(13,27,42,0.18)",
+                        fontSize: "2.25rem",
+                        lineHeight: 1,
+                        cursor: formData.destination.trim() ? "pointer" : "default",
+                        fontFamily: "inherit",
+                        padding: "0.4rem 0.8rem",
+                        transition: "color 0.2s, transform 0.2s",
+                        display: "inline-block",
+                      }}
+                      onMouseEnter={(e) => { if (formData.destination.trim()) e.currentTarget.style.transform = "translateX(8px)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.transform = "translateX(0)"; }}
+                    >→</button>
+                  </div>
+                )}
+
+                {/* STEP 2 — DATES */}
+                {formStep === 2 && (
+                  <div>
+                    <h2 style={stepHeadlineStyle}>When are you going?</h2>
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "3rem",
+                      marginTop: "3rem",
+                      textAlign: "left",
+                    }}>
+                      <div>
+                        <label style={stepLabelStyle}>Leaving</label>
+                        <input
+                          autoFocus
+                          type="date"
+                          className="step-giant-input"
+                          value={formData.dateFrom}
+                          onChange={(e) => setFormData({ ...formData, dateFrom: e.target.value })}
+                          style={stepInputStyle}
+                          onFocus={(e) => (e.target.style.borderBottomColor = "rgba(244,162,40,0.55)")}
+                          onBlur={(e) => (e.target.style.borderBottomColor = "rgba(13,27,42,0.12)")}
+                        />
+                      </div>
+                      <div>
+                        <label style={stepLabelStyle}>Returning</label>
+                        <input
+                          type="date"
+                          className="step-giant-input"
+                          value={formData.dateTo}
+                          onChange={(e) => setFormData({ ...formData, dateTo: e.target.value })}
+                          style={stepInputStyle}
+                          onFocus={(e) => (e.target.style.borderBottomColor = "rgba(244,162,40,0.55)")}
+                          onBlur={(e) => (e.target.style.borderBottomColor = "rgba(13,27,42,0.12)")}
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={advanceFormStep}
+                      style={stepContinueStyle}
+                      onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.7"; e.currentTarget.style.transform = "translateX(4px)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.opacity = "1";   e.currentTarget.style.transform = "translateX(0)"; }}
+                    >Continue →</button>
+                  </div>
+                )}
+
+                {/* STEP 3 — TRAVELLERS */}
+                {formStep === 3 && (
+                  <div>
+                    <h2 style={stepHeadlineStyle}>How many are going?</h2>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "3rem",
+                      marginTop: "3.5rem",
+                    }}>
+                      {(["−", "+"] as const).map((sign) => (
+                        <button
+                          key={sign}
+                          onClick={() => setFormData((prev) => ({
+                            ...prev,
+                            travellers: sign === "−"
+                              ? Math.max(1,  prev.travellers - 1)
+                              : Math.min(20, prev.travellers + 1),
+                          }))}
+                          style={{
+                            width: "60px", height: "60px",
+                            borderRadius: "50%",
+                            border: "2px solid var(--midnight)",
+                            background: "transparent",
+                            color: "var(--midnight)",
+                            fontSize: "1.75rem", fontWeight: 300, lineHeight: 1,
+                            cursor: "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            transition: "all 0.18s",
+                            fontFamily: "inherit",
+                            flexShrink: 0,
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "var(--midnight)";
+                            e.currentTarget.style.color = "var(--cream)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "transparent";
+                            e.currentTarget.style.color = "var(--midnight)";
+                          }}
+                        >{sign}</button>
+                      )).reduce<React.ReactNode[]>((acc, btn, i) => {
+                        if (i === 1) acc.push(
+                          <span key="num" style={{
+                            fontSize: "clamp(4.5rem, 14vw, 8rem)",
+                            fontWeight: 900,
+                            color: "var(--midnight)",
+                            letterSpacing: "-0.06em",
+                            lineHeight: 1,
+                            minWidth: "2.5ch",
+                            textAlign: "center",
+                            display: "inline-block",
+                          }}>{formData.travellers}</span>
+                        );
+                        acc.push(btn);
+                        return acc;
+                      }, [])}
+                    </div>
+                    <button
+                      onClick={advanceFormStep}
+                      style={stepContinueStyle}
+                      onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.7"; e.currentTarget.style.transform = "translateX(4px)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.opacity = "1";   e.currentTarget.style.transform = "translateX(0)"; }}
+                    >Continue →</button>
+                  </div>
+                )}
+
+                {/* STEP 4 — BUDGET */}
+                {formStep === 4 && (
+                  <div>
+                    <h2 style={stepHeadlineStyle}>What&apos;s your budget?</h2>
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(4, 1fr)",
+                      gap: "1rem",
+                      marginTop: "3rem",
+                    }}>
+                      {budgetOptions.map((option) => (
+                        <button
+                          key={option}
+                          onClick={() => {
+                            setFormData({ ...formData, budget: option });
+                            advanceFormStep();
+                          }}
+                          style={{
+                            padding: "2.25rem 0.75rem 2rem",
+                            border: formData.budget === option
+                              ? "2px solid var(--amber)"
+                              : "1.5px solid rgba(13,27,42,0.1)",
+                            borderRadius: "16px",
+                            background: formData.budget === option ? "rgba(244,162,40,0.06)" : "transparent",
+                            color: "var(--midnight)",
+                            fontWeight: formData.budget === option ? 700 : 500,
+                            fontSize: "0.92rem",
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                            letterSpacing: "-0.01em",
+                            transition: "all 0.2s",
+                            lineHeight: 1.3,
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "rgba(244,162,40,0.6)";
+                            e.currentTarget.style.background = "rgba(244,162,40,0.04)";
+                          }}
+                          onMouseLeave={(e) => {
+                            if (formData.budget !== option) {
+                              e.currentTarget.style.borderColor = "rgba(13,27,42,0.1)";
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
+                        >{option}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 5 — EMAIL */}
+                {formStep === 5 && (
+                  <div>
+                    <h2 style={stepHeadlineStyle}>Where should we<br />send your plan?</h2>
+                    <input
+                      autoFocus
+                      type="email"
+                      placeholder="your@email.com"
+                      className="step-giant-input"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onKeyDown={(e) => { if (e.key === "Enter") launchFromStepFlow(); }}
+                      style={{
+                        ...stepInputStyle,
+                        fontSize: "1.6rem",
+                        textAlign: "center",
+                        marginTop: "3rem",
+                        display: "block",
+                      }}
+                      onFocus={(e) => (e.target.style.borderBottomColor = "rgba(244,162,40,0.55)")}
+                      onBlur={(e) => (e.target.style.borderBottomColor = "rgba(13,27,42,0.12)")}
+                    />
+                    <button
+                      onClick={launchFromStepFlow}
+                      style={{
+                        marginTop: "3rem",
+                        width: "100%",
+                        background: "var(--amber)",
+                        color: "var(--midnight)",
+                        border: "none",
+                        padding: "1.4rem 2rem",
+                        fontSize: "1.1rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.02em",
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                        borderRadius: "4px",
+                        transition: "background 0.2s, transform 0.15s, box-shadow 0.2s",
+                        boxShadow: "0 4px 20px rgba(244,162,40,0.28)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "var(--amber-dark)";
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = "0 8px 28px rgba(244,162,40,0.38)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "var(--amber)";
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "0 4px 20px rgba(244,162,40,0.28)";
+                      }}
+                    >Build my trip →</button>
+                  </div>
+                )}
+              </div>
+
+              {/* Progress dots */}
+              <div style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: "0.5rem",
+                marginTop: "4.5rem",
+              }}>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      height: "5px",
+                      borderRadius: "3px",
+                      width: i === formStep ? "28px" : "5px",
+                      background: i <= formStep ? "var(--amber)" : "rgba(13,27,42,0.13)",
+                      transition: "all 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
+                    }}
+                  />
+                ))}
               </div>
             </div>
           </section>
@@ -615,118 +1077,6 @@ export default function Home() {
         </>
       )}
 
-      {/* ══════════════════════════════════════════════════════════
-          STEP 1 — TRIP BUILDER FORM
-      ══════════════════════════════════════════════════════════ */}
-      {step === 1 && (
-        <div style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "7rem 5% 5rem",
-          background: "var(--cream)",
-          animation: formExiting ? "formSlideOut 0.42s cubic-bezier(0.4, 0, 1, 1) forwards" : undefined,
-        }}>
-          <div style={{ width: "100%", maxWidth: "560px" }}>
-            <button
-              onClick={() => setStep(0)}
-              style={{
-                background: "transparent", border: "none", color: "var(--text-muted)",
-                fontSize: "0.88rem", fontWeight: 600, cursor: "pointer",
-                padding: "0", marginBottom: "2rem",
-                display: "flex", alignItems: "center", gap: "0.4rem",
-                fontFamily: "inherit",
-              }}
-            >
-              ← Back
-            </button>
-
-            <div className="hero-badge" style={{ marginBottom: "1.25rem" }}>
-              AI-Powered Travel Planning
-            </div>
-            <h2 style={{
-              fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)", fontWeight: 800,
-              color: "var(--midnight)", letterSpacing: "-0.03em",
-              marginBottom: "0.5rem", lineHeight: 1.1,
-            }}>
-              Let&apos;s plan your trip
-            </h2>
-            <p style={{ color: "var(--text-muted)", fontSize: "1rem", marginBottom: "2.25rem" }}>
-              Tell us the basics and we&apos;ll handle the rest.
-            </p>
-
-            <form onSubmit={handleTripSubmit}>
-              <div style={{ marginBottom: "1.5rem" }}>
-                <label style={labelStyle}>Where do you want to go?</label>
-                <input type="text" value={formData.destination}
-                  onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                  placeholder="e.g. Tokyo, Japan" required style={inputStyle} />
-              </div>
-
-              <div style={{ marginBottom: "1.5rem" }}>
-                <label style={labelStyle}>Travel dates</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: "0.76rem", fontWeight: 500, color: "var(--text-muted)", marginBottom: "0.4rem" }}>From</label>
-                    <input type="date" value={formData.dateFrom}
-                      onChange={(e) => setFormData({ ...formData, dateFrom: e.target.value })}
-                      required style={inputStyle} />
-                  </div>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: "0.76rem", fontWeight: 500, color: "var(--text-muted)", marginBottom: "0.4rem" }}>To</label>
-                    <input type="date" value={formData.dateTo}
-                      onChange={(e) => setFormData({ ...formData, dateTo: e.target.value })}
-                      required style={inputStyle} />
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: "1.5rem" }}>
-                <label style={labelStyle}>How many travellers?</label>
-                <input type="number" min={1} max={10} value={formData.travellers}
-                  onChange={(e) => setFormData({ ...formData, travellers: Math.min(10, Math.max(1, parseInt(e.target.value) || 1)) })}
-                  required style={{ ...inputStyle, maxWidth: "160px" }} />
-              </div>
-
-              <div style={{ marginBottom: "1.5rem" }}>
-                <label style={labelStyle}>What is your budget?</label>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.6rem" }}>
-                  {budgetOptions.map((option) => (
-                    <button key={option} type="button"
-                      onClick={() => setFormData({ ...formData, budget: option })}
-                      style={{
-                        padding: "0.85rem 0.4rem",
-                        border: formData.budget === option ? "2px solid var(--amber)" : "1px solid var(--border)",
-                        borderRadius: "12px",
-                        background: formData.budget === option ? "rgba(244,162,40,0.08)" : "var(--white)",
-                        color: formData.budget === option ? "var(--amber-dark)" : "var(--midnight)",
-                        fontWeight: formData.budget === option ? 700 : 500,
-                        fontSize: "0.85rem", cursor: "pointer", transition: "all 0.2s",
-                        fontFamily: "inherit",
-                        boxShadow: formData.budget === option ? "0 0 0 3px rgba(244,162,40,0.12)" : "0 1px 4px rgba(13,27,42,0.05)",
-                      }}>
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: "2rem" }}>
-                <label style={labelStyle}>Your email</label>
-                <input type="email" value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="your@email.com" required style={inputStyle} />
-              </div>
-
-              <button type="submit" className="btn-primary"
-                style={{ width: "100%", fontSize: "1.05rem", padding: "1rem 1.75rem" }}>
-                Build my trip →
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ══════════════════════════════════════════════════════════
           STEP 2 — QUESTION CARDS
